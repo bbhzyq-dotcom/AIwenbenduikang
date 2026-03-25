@@ -33,6 +33,10 @@ from .transformers import (
     SemanticDefense,
     TranslationChain,
     MultiTranslator,
+    SmartParaphraser,
+    MultiBackendTranslator,
+    create_paraphraser,
+    create_translator,
 )
 
 
@@ -65,6 +69,10 @@ class AntiDetector:
         # AI检测器对抗
         "ai_defense": AIReIDDefense,
         "semantic": SemanticDefense,
+        "backtranslate": BackTranslator,
+        # 智能改写（翻译回译）
+        "paraphrase": SmartParaphraser,
+        "multitrans": MultiBackendTranslator,
     }
 
     def __init__(
@@ -96,7 +104,12 @@ class AntiDetector:
         self.transformers: Dict[str, Any] = {}
         for name in self.strategy:
             if name in self.STRATEGY_MAPPING:
-                self.transformers[name] = self.STRATEGY_MAPPING[name](intensity)
+                transformer_class = self.STRATEGY_MAPPING[name]
+                # 特殊处理不需要intensity参数的变换器
+                if name in ["paraphraser", "multitrans"]:
+                    self.transformers[name] = transformer_class()
+                else:
+                    self.transformers[name] = transformer_class(intensity)
 
     def transform(self, text: str, random_order: bool = True) -> str:
         """
@@ -283,43 +296,57 @@ def create_engine(
         use_advanced: 是否启用高级策略
     """
     presets: Dict[str, List[str]] = {
+        # 基础模式
         "gentle": ["synonym", "spacing"],
-        "balanced": ["synonym", "structure", "tense", "punctuation"],
+        "balanced": ["synonym", "structure", "tense", "punctuation", "paraphrase"],
         "aggressive": [
             "synonym", "structure", "tense", "interrogative",
-            "style", "fragment"
+            "style", "fragment", "ai_defense", "paraphrase"
         ],
         "stealth": [
             "synonym", "spacing", "punctuation", "style",
-            "fragment"
+            "fragment", "paraphrase"
+        ],
+        # 翻译回译为核心模式
+        "translate_heavy": [
+            "paraphrase", "paraphrase", "paraphrase",
+            "multitrans", "paraphrase", "multitrans"
         ],
         "ultimate": [
             "synonym", "structure", "tense", "interrogative",
-            "style", "fragment", "ai_defense"
+            "style", "fragment", "ai_defense", "paraphrase", "multitrans"
+        ],
+        # 翻译回译模式（强化版）
+        "translate": [
+            "paraphrase", "paraphrase", "multitrans", "paraphrase"
+        ],
+        # LLM辅助模式（仅辅助，不生成）
+        "llm_assisted": [
+            "synonym", "structure", "paraphrase", "multitrans"
         ],
         # 小说文本预设
         "novel_balanced": [
             "dialogue", "narrative_perspective", "metaphor",
-            "action", "scene", "rhythm", "synonym"
+            "action", "scene", "rhythm", "synonym", "paraphrase"
         ],
         "novel_aggressive": [
             "dialogue", "narrative_perspective", "metaphor",
             "inner_monologue", "action", "scene", "character_name",
-            "emotion", "rhythm", "synonym", "structure"
+            "emotion", "rhythm", "synonym", "structure", "paraphrase"
         ],
         "novel_stealth": [
             "dialogue", "scene", "action", "metaphor",
-            "spacing", "punctuation", "synonym"
+            "spacing", "punctuation", "synonym", "paraphrase"
         ],
         # 学术文本预设
         "academic": [
             "synonym", "structure", "tense",
-            "punctuation", "style", "fragment"
+            "punctuation", "style", "fragment", "paraphrase"
         ],
         # 口语化预设
         "colloquial": [
             "tense", "interrogative", "style",
-            "fragment", "emotion"
+            "fragment", "emotion", "paraphrase"
         ],
     }
     strategy = presets.get(preset, presets["balanced"])

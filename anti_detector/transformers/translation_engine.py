@@ -183,7 +183,7 @@ class LibreTranslator(BaseTranslator):
 
 
 class TranslationChain:
-    """翻译链管理器"""
+    """翻译链管理器 - 核心回译策略"""
 
     CHAINS = {
         "en": ("en-US", "EN-US"),
@@ -193,7 +193,44 @@ class TranslationChain:
         "es": ("es-ES", "ES-ES"),
         "ko": ("ko-KR", "KO-KR"),
         "ru": ("ru-RU", "RU-RU"),
+        "it": ("it-IT", "IT-IT"),
+        "pt": ("pt-PT", "PT-PT"),
+        "ar": ("ar-SA", "AR-SA"),
     }
+
+    BACKTRANSLATION_PATHS = [
+        ("zh-CN", "en", "zh-CN"),
+        ("zh-CN", "ja", "zh-CN"),
+        ("zh-CN", "de", "zh-CN"),
+        ("zh-CN", "fr", "zh-CN"),
+        ("zh-CN", "ko", "zh-CN"),
+        ("zh-CN", "ru", "zh-CN"),
+        ("zh-CN", "es", "zh-CN"),
+        ("zh-CN", "it", "zh-CN"),
+        ("zh-CN", "pt", "zh-CN"),
+        ("zh-CN", "en", "de", "zh-CN"),
+        ("zh-CN", "en", "fr", "zh-CN"),
+        ("zh-CN", "en", "ja", "zh-CN"),
+        ("zh-CN", "ja", "en", "zh-CN"),
+        ("zh-CN", "de", "en", "zh-CN"),
+        ("zh-CN", "fr", "en", "zh-CN"),
+        ("zh-CN", "en", "es", "zh-CN"),
+        ("zh-CN", "en", "ko", "zh-CN"),
+        ("zh-CN", "ja", "ko", "zh-CN"),
+        ("zh-CN", "de", "fr", "zh-CN"),
+        ("zh-CN", "en", "ru", "zh-CN"),
+    ]
+
+    LONG_TEXT_PATHS = [
+        ("zh-CN", "en", "de", "zh-CN"),
+        ("zh-CN", "en", "fr", "zh-CN"),
+        ("zh-CN", "ja", "en", "zh-CN"),
+        ("zh-CN", "en", "ja", "zh-CN"),
+        ("zh-CN", "de", "en", "zh-CN"),
+        ("zh-CN", "fr", "en", "zh-CN"),
+        ("zh-CN", "en", "es", "fr", "zh-CN"),
+        ("zh-CN", "en", "de", "fr", "zh-CN"),
+    ]
 
     def __init__(self):
         self.translators: List[BaseTranslator] = []
@@ -284,6 +321,35 @@ class TranslationChain:
                 return result
 
         return text
+
+    def back_translate_v2(self, text: str, iterations: int = 1) -> str:
+        """
+        增强版回译 - 使用更多翻译路径
+
+        Args:
+            text: 原文
+            iterations: 回译次数
+        """
+        result = text
+
+        for _ in range(iterations):
+            if len(text) < 50:
+                path = random.choice(self.BACKTRANSLATION_PATHS[:6])
+            elif len(text) < 200:
+                path = random.choice(self.BACKTRANSLATION_PATHS[:12])
+            else:
+                path = random.choice(self.BACKTRANSLATION_PATHS + self.LONG_TEXT_PATHS)
+
+            current = result
+            for i in range(len(path) - 1):
+                for translator in self.translators:
+                    translated = translator.translate(current, path[i], path[i + 1])
+                    if translated and translated != current:
+                        current = translated
+                        break
+            result = current
+
+        return result
 
 
 class MultiTranslator:

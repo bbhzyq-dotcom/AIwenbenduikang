@@ -58,17 +58,16 @@ from .long_text_processor import (
     create_long_text_processor,
     create_adaptive_processor,
 )
-from .llm_client import (
-    LLMConfig,
-    BaseLLMClient,
-    OpenAICompatibleClient,
-    OllamaClient,
-    LLMDeAIFier,
-    LLMTextRepair,
-    HybridAntiAI,
-    create_ollama_client,
-    create_openai_client,
-    create_vllm_client,
+from .llm_paraphrase import (
+    TranslationChainV2,
+    SmartParaphraser,
+    MultiBackendTranslator,
+    create_paraphraser,
+    create_translator,
+    create_llm_thesaurus,
+    create_llm_transform,
+    LLMAssistedThesaurus,
+    LLMAssistedTransform,
 )
 
 __all__ = [
@@ -126,15 +125,14 @@ __all__ = [
     "AdaptiveLongTextProcessor",
     "create_long_text_processor",
     "create_adaptive_processor",
-    # LLM接口
-    "LLMConfig",
-    "BaseLLMClient",
-    "OpenAICompatibleClient",
-    "OllamaClient",
-    "LLMDeAIFier",
-    "LLMTextRepair",
-    "HybridAntiAI",
-    "create_ollama_client",
-    "create_openai_client",
-    "create_vllm_client",
+    # LLM辅助变换
+    "TranslationChainV2",
+    "SmartParaphraser",
+    "MultiBackendTranslator",
+    "create_paraphraser",
+    "create_translator",
+    "create_llm_thesaurus",
+    "create_llm_transform",
+    "LLMAssistedThesaurus",
+    "LLMAssistedTransform",
 ]
